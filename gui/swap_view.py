@@ -1,24 +1,45 @@
-import tkinter as tk
-from tkinter import ttk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
 
-class SwapView(tk.Frame):
-    """Swap space display"""
+
+class SwapView(ttk.Frame):
+    """Modern swap space display"""
     def __init__(self, parent):
-        super().__init__(parent, bg='white')
-        self.create_widgets()
+        super().__init__(parent)
         self.memory_manager = None
+        self.create_widgets()
     
     def create_widgets(self):
-        """Create swap space widgets"""
-        tk.Label(self, text="Pages in Swap Space", bg='white',
-                font=('Arial', 14, 'bold')).pack(pady=10)
+        """Create modern swap space widgets"""
+        # Header
+        header_frame = ttk.Frame(self, bootstyle="dark", padding=15)
+        header_frame.pack(fill=X, padx=20, pady=(20, 10))
         
-        self.listbox = tk.Listbox(self, font=('Arial', 11), height=20)
-        scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.listbox.yview)
-        self.listbox.configure(yscrollcommand=scrollbar.set)
+        ttk.Label(header_frame, text="Swap Space (Disk Storage)", 
+                 font=("Segoe UI", 14, "bold"),
+                 bootstyle="inverse-dark").pack(side=LEFT)
         
-        self.listbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=10, pady=10)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        # Listbox frame
+        list_frame = ttk.Frame(self)
+        list_frame.pack(fill=BOTH, expand=YES, padx=20, pady=10)
+        
+        # Treeview as listbox replacement
+        self.tree = ttk.Treeview(list_frame, columns=('page',), 
+                                show='tree headings', height=20,
+                                bootstyle="warning")
+        
+        self.tree.heading('#0', text='Index')
+        self.tree.heading('page', text='Page Number')
+        self.tree.column('#0', width=100, anchor=CENTER)
+        self.tree.column('page', width=200, anchor=CENTER)
+        
+        scrollbar = ttk.Scrollbar(list_frame, orient=VERTICAL, 
+                                 command=self.tree.yview,
+                                 bootstyle="warning-round")
+        self.tree.configure(yscrollcommand=scrollbar.set)
+        
+        self.tree.pack(side=LEFT, fill=BOTH, expand=YES)
+        scrollbar.pack(side=RIGHT, fill=Y)
     
     def set_memory_manager(self, mm):
         """Set memory manager reference"""
@@ -30,8 +51,10 @@ class SwapView(tk.Frame):
         if not self.memory_manager:
             return
         
-        self.listbox.delete(0, tk.END)
+        for item in self.tree.get_children():
+            self.tree.delete(item)
         
         pages = self.memory_manager.swap_space.get_pages_on_disk()
-        for page in pages:
-            self.listbox.insert(tk.END, f"Page {page}")
+        for idx, page in enumerate(pages):
+            self.tree.insert('', END, text=f'{idx + 1}', 
+                           values=(f'Page {page}',))
